@@ -19,6 +19,7 @@
     - Morse Code (MorseClient)
     - AX.25 (AX25Client)
     - SSTV (SSTVClient)
+    - SSTVEXT (SSTVEXTClient)
     - Hellschreiber (HellClient)
     - 4-FSK (FSK4Client)
     - APRS (APRSClient)
