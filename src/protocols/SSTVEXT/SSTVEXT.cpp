@@ -8,18 +8,18 @@ const SSTVEXTMode_t Robot36 {
   .scanPixelLen = 88000,
   .numTones = 12,
   .tones = {
-    { .type = tone_t::GENERIC,    .len = 9000,    .freq = 1200 },
-    { .type = tone_t::GENERIC,    .len = 3000,    .freq = 1500 },
-    { .type = tone_t::SCAN_Y,     .len = 88000,   .freq = 0    },
-    { .type = tone_t::GENERIC,    .len = 4500,    .freq = 1500 },
-    { .type = tone_t::GENERIC,    .len = 1500,    .freq = 1900 },
-    { .type = tone_t::SCAN_RY,    .len = 44000,   .freq = 0    },
-    { .type = tone_t::GENERIC,    .len = 9000,    .freq = 1200 },
-    { .type = tone_t::GENERIC,    .len = 3000,    .freq = 1500 },
-    { .type = tone_t::SCAN_Y,     .len = 88000,   .freq = 0    },
-    { .type = tone_t::GENERIC,    .len = 4500,    .freq = 2300 },
-    { .type = tone_t::GENERIC,    .len = 1500,    .freq = 1900 },
-    { .type = tone_t::SCAN_BY,    .len = 44000,   .freq = 0    },
+    { .type = toneext_t::GENERIC,    .len = 9000,    .freq = 1200 },
+    { .type = toneext_t::GENERIC,    .len = 3000,    .freq = 1500 },
+    { .type = toneext_t::SCAN_Y,     .len = 88000,   .freq = 0    },
+    { .type = toneext_t::GENERIC,    .len = 4500,    .freq = 1500 },
+    { .type = toneext_t::GENERIC,    .len = 1500,    .freq = 1900 },
+    { .type = toneext_t::SCAN_RY,    .len = 44000,   .freq = 0    },
+    { .type = toneext_t::GENERIC,    .len = 9000,    .freq = 1200 },
+    { .type = toneext_t::GENERIC,    .len = 3000,    .freq = 1500 },
+    { .type = toneext_t::SCAN_Y,     .len = 88000,   .freq = 0    },
+    { .type = toneext_t::GENERIC,    .len = 4500,    .freq = 2300 },
+    { .type = toneext_t::GENERIC,    .len = 1500,    .freq = 1900 },
+    { .type = toneext_t::SCAN_BY,    .len = 44000,   .freq = 0    },
   }
 };
 
@@ -30,15 +30,15 @@ const SSTVEXTMode_t Robot72 {
   .scanPixelLen = 138000,
   .numTones = 9,
   .tones = {
-    { .type = tone_t::GENERIC,    .len = 9000,    .freq = 1200 },
-    { .type = tone_t::GENERIC,    .len = 3000,    .freq = 1500 },
-    { .type = tone_t::SCAN_Y,     .len = 138000,  .freq = 0    },
-    { .type = tone_t::GENERIC,    .len = 4500,    .freq = 1500 },
-    { .type = tone_t::GENERIC,    .len = 1500,    .freq = 1900 },
-    { .type = tone_t::SCAN_RY,    .len = 69000,   .freq = 0    },
-    { .type = tone_t::GENERIC,    .len = 4500,    .freq = 2300 },
-    { .type = tone_t::GENERIC,    .len = 1500,    .freq = 1500 },
-    { .type = tone_t::SCAN_BY,    .len = 69000,   .freq = 0    },
+    { .type = toneext_t::GENERIC,    .len = 9000,    .freq = 1200 },
+    { .type = toneext_t::GENERIC,    .len = 3000,    .freq = 1500 },
+    { .type = toneext_t::SCAN_Y,     .len = 138000,  .freq = 0    },
+    { .type = toneext_t::GENERIC,    .len = 4500,    .freq = 1500 },
+    { .type = toneext_t::GENERIC,    .len = 1500,    .freq = 1900 },
+    { .type = toneext_t::SCAN_RY,    .len = 69000,   .freq = 0    },
+    { .type = toneext_t::GENERIC,    .len = 4500,    .freq = 2300 },
+    { .type = toneext_t::GENERIC,    .len = 1500,    .freq = 1500 },
+    { .type = toneext_t::SCAN_BY,    .len = 69000,   .freq = 0    },
   }
 };
 
@@ -137,7 +137,7 @@ void SSTVEXTClient::sendHeader() {
 void SSTVEXTClient::sendLine(const uint32_t* imgLine) {
   // send all tones in sequence
   for(uint8_t i = 0; i < txMode.numTones; i++) {
-    if((txMode.tones[i].type == tone_t::GENERIC) && (txMode.tones[i].len > 0)) {
+    if((txMode.tones[i].type == toneext_t::GENERIC) && (txMode.tones[i].len > 0)) {
       // sync/porch tones
       this->tone(txMode.tones[i].freq, txMode.tones[i].len);
     } else {
@@ -149,16 +149,16 @@ void SSTVEXTClient::sendLine(const uint32_t* imgLine) {
         uint32_t b = color & 0x000000FF;
         uint32_t v;
         switch(txMode.tones[i].type) {
-          case(tone_t::SCAN_Y):
+          case(toneext_t::SCAN_Y):
             v = 16 + (0.003906 * ((65.738 * r) + (129.057 * g) + (25.064 * b)));
             break;
-          case(tone_t::SCAN_RY):
+          case(toneext_t::SCAN_RY):
             v = 128.0 + (0.003906 * ((112.439 * r) + (-94.154 * g) + (-18.285 * b)));
             break;
-          case(tone_t::SCAN_BY):
+          case(toneext_t::SCAN_BY):
             v = 128.0 + (0.003906 * ((-37.945 * r) + (-74.494 * g) + (112.439 * b)));
             break;
-          case(tone_t::GENERIC):
+          case(toneext_t::GENERIC):
             break;
         }
         this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), txMode.tones[i].len);

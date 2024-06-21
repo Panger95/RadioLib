@@ -29,13 +29,13 @@
 #define RADIOLIB_SSTVEXT_HEADER_BIT_LENGTH                     30000
 
 /*!
-  \struct tone_t
+  \struct toneext_t
   \brief Structure to save data about tone.
 */
-struct tone_t {
+struct toneext_t {
 
   /*!
-    \brief Tone type: GENERIC for sync and porch tones, SCAN_GREEN, SCAN_BLUE and SCAN_RED for scan lines.
+    \brief Tone type: GENERIC for sync and porch tones, SCAN_Y, SCAN_BY and SCAN_RY for scan lines.
   */
   enum {
     GENERIC = 0,
@@ -79,7 +79,7 @@ struct SSTVEXTMode_t {
   /*!
     \brief Pixel scan length in us.
   */
-  uint16_t scanPixelLen;
+  uint32_t scanPixelLen;
 
   /*!
     \brief Number of tones in each transmission line. Picture scan data is considered single tone.
@@ -89,7 +89,7 @@ struct SSTVEXTMode_t {
   /*!
     \brief Sequence of tones in each transmission line. This is used to create the correct encoding sequence.
   */
-  tone_t tones[12];
+  toneext_t tones[12];
 };
 
 // all currently supported SSTVEXT modes
