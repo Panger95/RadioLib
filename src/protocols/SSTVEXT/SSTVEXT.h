@@ -35,10 +35,11 @@
 struct toneext_t {
 
   /*!
-    \brief Tone type: GENERIC for sync and porch tones, SCAN_Y, SCAN_BY and SCAN_RY for scan lines.
+    \brief Tone type: GENERIC for sync and porch tones, OTHER for storing temp tone, SCAN_Y, SCAN_BY and SCAN_RY for scan lines.
   */
   enum {
     GENERIC = 0,
+    OTHER,
     SCAN_Y,
     SCAN_BY,
     SCAN_RY,
@@ -62,7 +63,7 @@ struct toneext_t {
 struct SSTVEXTMode_t {
 
   /*!
-    \brief Unique VIS code of the SSTV mode.
+    \brief Unique VIS code of the SSTVEXT mode.
   */
   uint8_t visCode;
 
@@ -79,7 +80,7 @@ struct SSTVEXTMode_t {
   /*!
     \brief Pixel scan length in us.
   */
-  uint32_t scanPixelLen;
+  uint16_t scanPixelLen;
 
   /*!
     \brief Number of tones in each transmission line. Picture scan data is considered single tone.
@@ -89,7 +90,7 @@ struct SSTVEXTMode_t {
   /*!
     \brief Sequence of tones in each transmission line. This is used to create the correct encoding sequence.
   */
-  toneext_t tones[12];
+  toneext_t tones[8];
 };
 
 // all currently supported SSTVEXT modes
@@ -98,7 +99,7 @@ extern const SSTVEXTMode_t Robot72;
 
 /*!
   \class SSTVEXTClient
-  \brief Client for SSTV transmissions.
+  \brief Client for SSTVEXT transmissions.
 */
 class SSTVEXTClient {
   public:
@@ -121,8 +122,7 @@ class SSTVEXTClient {
     /*!
       \brief Initialization method for 2-FSK.
       \param base Base "0 Hz tone" RF frequency to be used in MHz.
-      \param mode SSTV mode to be used. Currently supported modes are Scottie1, Scottie2, 
-      ScottieDX, Martin1, Martin2, Wrasse, PasokonP3, PasokonP5 and PasokonP7.
+      \param mode SSTVEXT mode to be used. Currently supported modes are Robot36 and Robot72.
       \returns \ref status_codes
     */
     int16_t begin(float base, const SSTVEXTMode_t& mode);
@@ -150,20 +150,20 @@ class SSTVEXTClient {
     void idle();
 
     /*!
-      \brief Sends synchronization header for the SSTV mode set in begin method.
+      \brief Sends synchronization header for the SSTVEXT mode set in begin method.
     */
     void sendHeader();
 
     /*!
-      \brief Sends single picture line in the currently configured SSTV mode.
+      \brief Sends single picture line in the currently configured SSTVEXT mode.
       \param imgLine Image line to send, in 24-bit RGB. It is up to the user to ensure that
-      imgLine has enough pixels to send it in the current SSTV mode.
+      imgLine has enough pixels to send it in the current SSTVEXT mode.
     */
     void sendLine(const uint32_t* imgLine);
 
     /*!
-      \brief Get picture height of the currently configured SSTV mode.
-      \returns Picture height of the currently configured SSTV mode in pixels.
+      \brief Get picture height of the currently configured SSTVEXT mode.
+      \returns Picture height of the currently configured SSTVEXT mode in pixels.
     */
     uint16_t getPictureHeight() const;
 
@@ -178,6 +178,7 @@ class SSTVEXTClient {
     uint32_t baseFreq = 0;
     SSTVEXTMode_t txMode = Robot36;
     bool firstLine = true;
+    bool lastLine = true;
 
     void tone(float freq, RadioLibTime_t len = 0);
 };
