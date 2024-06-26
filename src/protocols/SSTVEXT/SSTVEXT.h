@@ -177,7 +177,6 @@ class SSTVEXTClient {
 
     uint32_t baseFreq = 0;
     SSTVEXTMode_t txMode = Robot36;
-    bool firstLine = true;
     bool lastLine = true;
     float correctionFactor = 1.0;
 

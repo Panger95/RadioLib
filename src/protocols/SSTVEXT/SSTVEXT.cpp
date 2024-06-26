@@ -88,8 +88,6 @@ void SSTVEXTClient::idle() {
 }
 
 void SSTVEXTClient::sendHeader() {
-  // save first header flag for Scottie modes
-  firstLine = true;
   phyLayer->transmitDirect();
 
   // send the first part of header (leader-break-leader)
