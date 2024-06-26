@@ -188,16 +188,16 @@ void SSTVEXTClient::sendLine(const uint32_t* imgLine) {
             break;
         }
         if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (txMode.tones[i].type == toneext_t::SCAN_Y)) {
-          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), 88000);
+          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), 88000 / txMode.width);
         }
         else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && ((txMode.tones[i].type == toneext_t::SCAN_RY) || (txMode.tones[i].type == toneext_t::SCAN_BY))) {
-          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), 44000);
+          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), 44000 / txMode.width);
         }
         if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && (txMode.tones[i].type == toneext_t::SCAN_Y)) {
-          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), 138000);
+          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), 138000 / txMode.width);
         }
         else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && ((txMode.tones[i].type == toneext_t::SCAN_RY) || (txMode.tones[i].type == toneext_t::SCAN_BY))) {
-          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), 69000);
+          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), 69000 / txMode.width);
         }
         if ((j == (txMode.width - 1)) && ((txMode.tones[i].type == toneext_t::SCAN_RY) || (txMode.tones[i].type == toneext_t::SCAN_BY))) {
           txMode.tones[i].type = toneext_t::OTHER;
