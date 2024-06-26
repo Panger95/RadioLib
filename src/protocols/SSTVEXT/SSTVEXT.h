@@ -179,6 +179,7 @@ class SSTVEXTClient {
     SSTVEXTMode_t txMode = Robot36;
     bool firstLine = true;
     bool lastLine = true;
+    float correctionFactor = 1.0;
 
     void tone(float freq, RadioLibTime_t len = 0);
 };
