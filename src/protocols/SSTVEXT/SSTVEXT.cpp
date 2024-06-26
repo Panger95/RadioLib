@@ -133,35 +133,35 @@ void SSTVEXTClient::sendLine(const uint32_t* imgLine) {
     } else {
       if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (txMode.tones[i].type == toneext_t::OTHER) && (lastLine == true)) {
         // Even separator tone
-        this->tone(1500, 4500);
+        this->tone(1500, 4500 * correctionFactor);
         // Porch tone
-        this->tone(1900, 1500);
+        this->tone(1900, 1500 * correctionFactor);
         // RY Scan tone
         lastLine = false;
         txMode.tones[i].type = toneext_t::SCAN_RY;
       }
       else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (txMode.tones[i].type == toneext_t::OTHER) && (lastLine == false)) {
         // Odd separator tone
-        this->tone(2300, 4500);
+        this->tone(2300, 4500 * correctionFactor);
         // Porch tone
-        this->tone(1900, 1500);
+        this->tone(1900, 1500 * correctionFactor);
         // BY Scan tone
         lastLine = true;
         txMode.tones[i].type = toneext_t::SCAN_BY;
       }
       if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && (txMode.tones[i].type == toneext_t::OTHER) && (lastLine == true)) {
         // Even separator tone
-        this->tone(1500, 4500);
+        this->tone(1500, 4500 * correctionFactor);
         // Porch tone
-        this->tone(1900, 1500);
+        this->tone(1900, 1500 * correctionFactor);
         // BY Scan tone
         lastLine = false;
         txMode.tones[i].type = toneext_t::SCAN_RY;
       } else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && (txMode.tones[i].type == toneext_t::OTHER) && (lastLine == false)) {
         // Odd separator tone
-        this->tone(2300, 4500);
+        this->tone(2300, 4500 * correctionFactor);
         // Porch tone
-        this->tone(1500, 1500);
+        this->tone(1500, 1500 * correctionFactor);
         // RY Scan tone
         lastLine = true;
         txMode.tones[i].type = toneext_t::SCAN_BY;
