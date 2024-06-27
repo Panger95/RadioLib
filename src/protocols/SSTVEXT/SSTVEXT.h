@@ -39,7 +39,7 @@ struct toneext_t {
   */
   enum {
     GENERIC = 0,
-    OTHER,
+    SCAN_RY_BY,
     SCAN_Y,
     SCAN_BY,
     SCAN_RY,

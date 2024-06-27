@@ -8,12 +8,12 @@ const SSTVEXTMode_t Robot36 {
   .scanPixelLen = 2750,
   .numTones = 6,
   .tones = {
-    { .type = toneext_t::GENERIC,    .len = 9000,   .freq = 1200 },
-    { .type = toneext_t::GENERIC,    .len = 3000,   .freq = 1500 },
-    { .type = toneext_t::SCAN_Y,     .len = 0,      .freq = 0    },
-    { .type = toneext_t::GENERIC,    .len = 4500,   .freq = 1500 },
-    { .type = toneext_t::GENERIC,    .len = 1500,   .freq = 1900 },
-    { .type = toneext_t::OTHER,      .len = 0,      .freq = 0    }
+    { .type = toneext_t::GENERIC,      .len = 9000,  .freq = 1200 },
+    { .type = toneext_t::GENERIC,      .len = 3000,  .freq = 1500 },
+    { .type = toneext_t::SCAN_Y,       .len = 0,     .freq = 0    },
+    { .type = toneext_t::GENERIC,      .len = 4500,  .freq = 1500 },
+    { .type = toneext_t::GENERIC,      .len = 1500,  .freq = 1900 },
+    { .type = toneext_t::SCAN_RY_BY,   .len = 0,     .freq = 0    }
   }
 };
 
@@ -24,10 +24,10 @@ const SSTVEXTMode_t Robot72 {
   .scanPixelLen = 4312,
   .numTones = 4,
   .tones = {
-    { .type = toneext_t::GENERIC,    .len = 9000,   .freq = 1200 },
-    { .type = toneext_t::GENERIC,    .len = 3000,   .freq = 1500 },
-    { .type = toneext_t::SCAN_Y,     .len = 0,      .freq = 0    },
-    { .type = toneext_t::OTHER,      .len = 0,      .freq = 0    }
+    { .type = toneext_t::GENERIC,      .len = 9000,  .freq = 1200 },
+    { .type = toneext_t::GENERIC,      .len = 3000,  .freq = 1500 },
+    { .type = toneext_t::SCAN_Y,       .len = 0,     .freq = 0    },
+    { .type = toneext_t::SCAN_RY_BY,   .len = 0,     .freq = 0    }
   }
 };
 
@@ -129,37 +129,36 @@ void SSTVEXTClient::sendLine(const uint32_t* imgLine) {
       // sync/porch tones
       this->tone(txMode.tones[i].freq, txMode.tones[i].len);
     } else {
-      if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (txMode.tones[i].type == toneext_t::OTHER) && (lastLine == true)) {
+      if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (txMode.tones[i].type == toneext_t::SCAN_RY_BY) && (lastLine == true)) {
         // Even separator tone
-        this->tone(1500, 4500 * correctionFactor);
+        this->tone(1500, (4500 * correctionFactor));
         // Porch tone
-        this->tone(1900, 1500 * correctionFactor);
+        this->tone(1900, (1500 * correctionFactor));
         // RY Scan tone
         lastLine = false;
         txMode.tones[i].type = toneext_t::SCAN_RY;
-      }
-      else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (txMode.tones[i].type == toneext_t::OTHER) && (lastLine == false)) {
+      } else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (txMode.tones[i].type == toneext_t::SCAN_RY_BY) && (lastLine == false)) {
         // Odd separator tone
-        this->tone(2300, 4500 * correctionFactor);
+        this->tone(2300, (4500 * correctionFactor));
         // Porch tone
-        this->tone(1900, 1500 * correctionFactor);
+        this->tone(1900, (1500 * correctionFactor));
         // BY Scan tone
         lastLine = true;
         txMode.tones[i].type = toneext_t::SCAN_BY;
       }
-      if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && (txMode.tones[i].type == toneext_t::OTHER) && (lastLine == true)) {
+      if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && (txMode.tones[i].type == toneext_t::SCAN_RY_BY) && (lastLine == true)) {
         // Even separator tone
-        this->tone(1500, 4500 * correctionFactor);
+        this->tone(1500, (4500 * correctionFactor));
         // Porch tone
-        this->tone(1900, 1500 * correctionFactor);
+        this->tone(1900, (1500 * correctionFactor));
         // BY Scan tone
         lastLine = false;
         txMode.tones[i].type = toneext_t::SCAN_RY;
-      } else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && (txMode.tones[i].type == toneext_t::OTHER) && (lastLine == false)) {
+      } else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && (txMode.tones[i].type == toneext_t::SCAN_RY_BY) && (lastLine == false)) {
         // Odd separator tone
-        this->tone(2300, 4500 * correctionFactor);
+        this->tone(2300, (4500 * correctionFactor));
         // Porch tone
-        this->tone(1500, 1500 * correctionFactor);
+        this->tone(1500, (1500 * correctionFactor));
         // RY Scan tone
         lastLine = true;
         txMode.tones[i].type = toneext_t::SCAN_BY;
@@ -173,33 +172,34 @@ void SSTVEXTClient::sendLine(const uint32_t* imgLine) {
         float v;
         switch(txMode.tones[i].type) {
           case(toneext_t::SCAN_Y):
-            v = 16.0 + (0.003906 * ((65.738 * r) + (129.057 * g) + (25.064 * b)));
+            // v = 16.0 + (0.003906 * ((65.738 * r) + (129.057 * g) + (25.064 * b)));
+            v = ((0.299 * r) + (0.587 * g) + (0.114 * b));
             break;
           case(toneext_t::SCAN_RY):
-            v = 128.0 + (0.003906 * ((112.439 * r) + (-94.154 * g) + (-18.285 * b)));
+            // v = 128.0 + (0.003906 * ((112.439 * r) + (-94.154 * g) + (-18.285 * b)));
+            v = (128.0 + (0.5 * r) - (0.418688 * g) - (0.081312 * b));
             break;
           case(toneext_t::SCAN_BY):
-            v = 128.0 + (0.003906 * ((-37.945 * r) + (-74.494 * g) + (112.439 * b)));
+            // v = 128.0 + (0.003906 * ((-37.945 * r) + (-74.494 * g) + (112.439 * b)));
+            v = (128.0 - (0.168736 * r) - (0.331264 * g) + (0.5 * b));
             break;
           case(toneext_t::GENERIC):
             break;
-          case(toneext_t::OTHER):
+          case(toneext_t::SCAN_RY_BY):
             break;
         }
         if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (txMode.tones[i].type == toneext_t::SCAN_Y)) {
-          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), 88000 * correctionFactor);
-        }
-        else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && ((txMode.tones[i].type == toneext_t::SCAN_RY) || (txMode.tones[i].type == toneext_t::SCAN_BY))) {
-          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), 44000 * correctionFactor);
+          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), ((88000 / txMode.width) * correctionFactor));
+        } else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && ((txMode.tones[i].type == toneext_t::SCAN_RY) || (txMode.tones[i].type == toneext_t::SCAN_BY))) {
+          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), ((44000 / txMode.width) * correctionFactor));
         }
         if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && (txMode.tones[i].type == toneext_t::SCAN_Y)) {
-          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), 138000 * correctionFactor);
-        }
-        else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && ((txMode.tones[i].type == toneext_t::SCAN_RY) || (txMode.tones[i].type == toneext_t::SCAN_BY))) {
-          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), 69000 * correctionFactor);
+          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), ((138000 / txMode.width) * correctionFactor));
+        } else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && ((txMode.tones[i].type == toneext_t::SCAN_RY) || (txMode.tones[i].type == toneext_t::SCAN_BY))) {
+          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), ((69000 / txMode.width) * correctionFactor));
         }
         if ((j == (txMode.width - 1)) && ((txMode.tones[i].type == toneext_t::SCAN_RY) || (txMode.tones[i].type == toneext_t::SCAN_BY))) {
-          txMode.tones[i].type = toneext_t::OTHER;
+          txMode.tones[i].type = toneext_t::SCAN_RY_BY;
         }
       }
     }
