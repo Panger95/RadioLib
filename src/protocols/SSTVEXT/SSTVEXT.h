@@ -35,14 +35,14 @@
 struct toneext_t {
 
   /*!
-    \brief Tone type: GENERIC for sync and porch tones, OTHER for storing temp tone, SCAN_Y, SCAN_BY and SCAN_RY for scan lines.
+    \brief Tone type: GENERIC for sync and porch tones, SCAN_RY_BY for storing temp tone, SCAN_Y, SCAN_BY and SCAN_RY for scan lines.
   */
   enum {
     GENERIC = 0,
-    SCAN_RY_BY,
     SCAN_Y,
-    SCAN_BY,
     SCAN_RY,
+    SCAN_BY,
+    SCAN_RY_BY,
   } type;
 
   /*!
@@ -178,6 +178,12 @@ class SSTVEXTClient {
     uint32_t baseFreq = 0;
     SSTVEXTMode_t txMode = Robot36;
     bool lastLine = true;
+    float averageValueRY = 0.0;
+    float averageValueBY = 0.0;
+    float* previousValueRY = new float[txMode.width];
+    float* currentValueRY = new float[txMode.width];
+    float* previousValueBY = new float[txMode.width];
+    float* currentValueBY = new float[txMode.width];
     float correctionFactor = 1.0;
 
     void tone(float freq, RadioLibTime_t len = 0);

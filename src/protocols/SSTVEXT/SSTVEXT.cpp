@@ -6,13 +6,11 @@ const SSTVEXTMode_t Robot36 {
   .width = 320,
   .height = 240,
   .scanPixelLen = 2750,
-  .numTones = 6,
+  .numTones = 4,
   .tones = {
     { .type = toneext_t::GENERIC,      .len = 9000,  .freq = 1200 },
     { .type = toneext_t::GENERIC,      .len = 3000,  .freq = 1500 },
     { .type = toneext_t::SCAN_Y,       .len = 0,     .freq = 0    },
-    { .type = toneext_t::GENERIC,      .len = 4500,  .freq = 1500 },
-    { .type = toneext_t::GENERIC,      .len = 1500,  .freq = 1900 },
     { .type = toneext_t::SCAN_RY_BY,   .len = 0,     .freq = 0    }
   }
 };
@@ -68,7 +66,17 @@ int16_t SSTVEXTClient::begin(float base, const SSTVEXTMode_t& mode) {
 }
 
 int16_t SSTVEXTClient::setCorrection(float correction) {
+  // save correction factor
   correctionFactor = correction;
+
+  // initialize previous and current values
+  for (uint16_t i = 0; i < txMode.width; i++) {
+    previousValueRY[i] = 0.0;
+    currentValueRY[i] = 0.0;
+    previousValueBY[i] = 0.0;
+    currentValueBY[i] = 0.0;
+  }
+
   // check if mode is initialized
   if(txMode.visCode == 0) {
     return(RADIOLIB_ERR_WRONG_MODEM);
@@ -134,17 +142,11 @@ void SSTVEXTClient::sendLine(const uint32_t* imgLine) {
         this->tone(1500, (4500 * correctionFactor));
         // Porch tone
         this->tone(1900, (1500 * correctionFactor));
-        // RY Scan tone
-        lastLine = false;
-        txMode.tones[i].type = toneext_t::SCAN_RY;
       } else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (txMode.tones[i].type == toneext_t::SCAN_RY_BY) && (lastLine == false)) {
         // Odd separator tone
         this->tone(2300, (4500 * correctionFactor));
         // Porch tone
         this->tone(1900, (1500 * correctionFactor));
-        // BY Scan tone
-        lastLine = true;
-        txMode.tones[i].type = toneext_t::SCAN_BY;
       }
       if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && (txMode.tones[i].type == toneext_t::SCAN_RY_BY) && (lastLine == true)) {
         // Even separator tone
@@ -169,37 +171,64 @@ void SSTVEXTClient::sendLine(const uint32_t* imgLine) {
         uint8_t r = (color &= 0x00FF0000) >> 16;
         uint8_t g = (color &= 0x0000FF00) >> 8;
         uint8_t b = color &= 0x000000FF;
-        float v;
+        float v = 0.0;
+        float vry = 0.0;
+        float vby = 0.0;
+        // TODO: I need to do the average of lines 1-2 for R-Y and then 2-3 for B-Y and then 3-4 for R-Y and so on.
         switch(txMode.tones[i].type) {
           case(toneext_t::SCAN_Y):
-            // v = 16.0 + (0.003906 * ((65.738 * r) + (129.057 * g) + (25.064 * b)));
-            v = ((0.299 * r) + (0.587 * g) + (0.114 * b));
+            v = 16.0 + (0.003906 * ((65.738 * r) + (129.057 * g) + (25.064 * b)));
             break;
           case(toneext_t::SCAN_RY):
-            // v = 128.0 + (0.003906 * ((112.439 * r) + (-94.154 * g) + (-18.285 * b)));
-            v = (128.0 + (0.5 * r) - (0.418688 * g) - (0.081312 * b));
+            v = 128.0 + (0.003906 * ((112.439 * r) + (-94.154 * g) + (-18.285 * b)));
             break;
           case(toneext_t::SCAN_BY):
-            // v = 128.0 + (0.003906 * ((-37.945 * r) + (-74.494 * g) + (112.439 * b)));
-            v = (128.0 - (0.168736 * r) - (0.331264 * g) + (0.5 * b));
-            break;
-          case(toneext_t::GENERIC):
+            v = 128.0 + (0.003906 * ((-37.945 * r) + (-74.494 * g) + (112.439 * b)));
             break;
           case(toneext_t::SCAN_RY_BY):
+            vry = 128.0 + (0.003906 * ((112.439 * r) + (-94.154 * g) + (-18.285 * b)));
+            vby = 128.0 + (0.003906 * ((-37.945 * r) + (-74.494 * g) + (112.439 * b)));
+            break;
+          case(toneext_t::GENERIC):
             break;
         }
         if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (txMode.tones[i].type == toneext_t::SCAN_Y)) {
           this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), ((88000 / txMode.width) * correctionFactor));
-        } else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && ((txMode.tones[i].type == toneext_t::SCAN_RY) || (txMode.tones[i].type == toneext_t::SCAN_BY))) {
-          this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), ((44000 / txMode.width) * correctionFactor));
+        } else if (lastLine == true) {
+          previousValueRY[j] = currentValueRY[j];
+          // Serial.println("HERE FIRST!");
+          // Serial.println(previousValueRY[j]);
+          // Serial.println(currentValueRY[j]);
+          currentValueRY[j] = (RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)vry * 3.1372549));
+          averageValueRY = ((previousValueRY[j] + currentValueRY[j]) / 2);
+          currentValueBY[j] = (RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)vby * 3.1372549));
+
+          this->tone(averageValueRY, ((44000 / txMode.width) * correctionFactor));
+        } else if (lastLine == false) {
+          previousValueBY[j] = currentValueBY[j];
+          // Serial.println("HERE SECOND!");
+          // Serial.println(previousValueBY[j]);
+          // Serial.println(currentValueBY[j]);
+          currentValueBY[j] = (RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)vby * 3.1372549));
+          averageValueBY = ((previousValueBY[j] + currentValueBY[j]) / 2);
+          currentValueRY[j] = (RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)vry * 3.1372549));
+
+          this->tone(averageValueBY, ((44000 / txMode.width) * correctionFactor));
         }
         if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && (txMode.tones[i].type == toneext_t::SCAN_Y)) {
           this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), ((138000 / txMode.width) * correctionFactor));
         } else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_72) && ((txMode.tones[i].type == toneext_t::SCAN_RY) || (txMode.tones[i].type == toneext_t::SCAN_BY))) {
           this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), ((69000 / txMode.width) * correctionFactor));
         }
-        if ((j == (txMode.width - 1)) && ((txMode.tones[i].type == toneext_t::SCAN_RY) || (txMode.tones[i].type == toneext_t::SCAN_BY))) {
-          txMode.tones[i].type = toneext_t::SCAN_RY_BY;
+        if (j == (txMode.width - 1)) {
+          if ((txMode.tones[i].type == toneext_t::SCAN_RY) || (txMode.tones[i].type == toneext_t::SCAN_BY)) {
+            txMode.tones[i].type = toneext_t::SCAN_RY_BY;
+          }
+          if (lastLine == true) {
+            lastLine = false;
+          } else if (lastLine == false) {
+            lastLine = true;
+          }
         }
       }
     }
