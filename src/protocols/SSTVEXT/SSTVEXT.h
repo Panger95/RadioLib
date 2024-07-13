@@ -22,6 +22,9 @@
 #define RADIOLIB_SSTVEXT_TONE_VIS_0                            1300
 #define RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN                   1500
 #define RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MAX                   2300
+#define RADIOLIB_SSTVEXT_TONE_ROBOT36_EVEN                     1500
+#define RADIOLIB_SSTVEXT_TONE_ROBOT36_ODD                      2300
+#define RADIOLIB_SSTVEXT_TONE_ROBOT36_PORCH                    1900
 
 // calibration header timing in us
 #define RADIOLIB_SSTVEXT_HEADER_LEADER_LENGTH                  300000
@@ -90,7 +93,7 @@ struct SSTVEXTMode_t {
   /*!
     \brief Sequence of tones in each transmission line. This is used to create the correct encoding sequence.
   */
-  toneext_t tones[8];
+  toneext_t tones[4];
 };
 
 // all currently supported SSTVEXT modes
@@ -167,23 +170,34 @@ class SSTVEXTClient {
     */
     uint16_t getPictureHeight() const;
 
+    /*!
+      \brief
+    */
+    void findTone();
+
+    /*!
+      \brief
+    */
+   void makeTask();
+
 #if !RADIOLIB_GODMODE
-  private:
+        private :
 #endif
-    PhysicalLayer* phyLayer;
+    PhysicalLayer *phyLayer;
     #if !RADIOLIB_EXCLUDE_AFSK
     AFSKClient* audioClient;
     #endif
 
     uint32_t baseFreq = 0;
     SSTVEXTMode_t txMode = Robot36;
+    bool firstLine = true;
     bool lastLine = true;
     float averageValueRY = 0.0;
     float averageValueBY = 0.0;
-    float* previousValueRY = new float[txMode.width];
-    float* currentValueRY = new float[txMode.width];
-    float* previousValueBY = new float[txMode.width];
-    float* currentValueBY = new float[txMode.width];
+    float* previousValueRY = (float*)malloc(txMode.width);
+    float* currentValueRY = (float*)malloc(txMode.width);
+    float* previousValueBY = (float*)malloc(txMode.width);
+    float* currentValueBY = (float*)malloc(txMode.width);
     float correctionFactor = 1.0;
 
     void tone(float freq, RadioLibTime_t len = 0);

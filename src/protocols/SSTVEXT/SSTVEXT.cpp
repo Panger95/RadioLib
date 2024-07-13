@@ -69,14 +69,6 @@ int16_t SSTVEXTClient::setCorrection(float correction) {
   // save correction factor
   correctionFactor = correction;
 
-  // initialize previous and current values
-  for (uint16_t i = 0; i < txMode.width; i++) {
-    previousValueRY[i] = 0.0;
-    currentValueRY[i] = 0.0;
-    previousValueBY[i] = 0.0;
-    currentValueBY[i] = 0.0;
-  }
-
   // check if mode is initialized
   if(txMode.visCode == 0) {
     return(RADIOLIB_ERR_WRONG_MODEM);
@@ -96,7 +88,22 @@ void SSTVEXTClient::idle() {
 }
 
 void SSTVEXTClient::sendHeader() {
+  // save first header flag for Scottie modes
+  firstLine = true;
   phyLayer->transmitDirect();
+
+  // preamble
+  // this->tone(1900, 100);
+  // this->tone(1500, 100);
+  // this->tone(1900, 100);
+  // this->tone(1500, 100);
+  // this->tone(2300, 100);
+  // this->tone(1500, 100);
+  // this->tone(2300, 100);
+  // this->tone(1500, 100);
+  // this->tone(1900, 300);
+  // this->tone(1200, 10);
+  // this->tone(1900, 300);
 
   // send the first part of header (leader-break-leader)
   this->tone(RADIOLIB_SSTVEXT_TONE_LEADER, RADIOLIB_SSTVEXT_HEADER_LEADER_LENGTH);
@@ -130,19 +137,62 @@ void SSTVEXTClient::sendHeader() {
   this->tone(RADIOLIB_SSTVEXT_TONE_BREAK, RADIOLIB_SSTVEXT_HEADER_BIT_LENGTH);
 }
 
+/*
+  * Order of Operations for Robot36:
+  * 1. Figure out if the mode is Robot 36 or Robot 72
+  * 2. If Robot36 then send Y Scan tone for calculated Hz value for 88000 ms
+  * 3. If Robot36 and firstLine send an "even" separator 1500 Hz tone for 4500 ms 
+  *    then 1900 Hz tone for 1500 ms then R-Y Scan tone for 0 Hz for 44000 ms
+  * 4. If Robot36 and not firstLine and lastLine send an "even" separator 1500 Hz tone for 4500 ms 
+  *    then 1900 Hz tone for 1500 ms then R-Y Scan tone for calculated Hz value for 44000 ms
+  * 5. If Robot36 and not firstLine and not lastLine send an "odd" separator 2300 Hz tone for 4500 ms
+  *    then 1900 Hz tone for 1500 ms then B-Y Scan tone for calculated Hz value for 44000 ms
+*/
+
+/*
+  * Order of Operations for Robot72:
+  * 1. Figure out if the mode is Robot 36 or Robot 72
+  * 2. If Robot72 then send Y Scan tone for calculated Hz value for 138000 ms
+  * 3. If Robot72 and firstLine send an "even" separator 1500 Hz tone for 4500 ms 
+  *    then 1900 Hz tone for 1500 ms then R-Y Scan tone for 0 Hz for 69000 ms
+  * 4. If Robot72 and not firstLine and lastLine send an "even" separator 1500 Hz tone for 4500 ms 
+  *    then 1900 Hz tone for 1500 ms then R-Y Scan tone for calculated Hz value for 69000 ms
+  * 5. If Robot72 and not firstLine and not lastLine send an "odd" separator 2300 Hz tone for 4500 ms
+  *    then 1500 Hz tone for 1500 ms then B-Y Scan tone for calculated Hz value for 69000 ms
+*/
+
+void SSTVEXTClient::findTone() {
+  if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (lastLine == true)) {
+    // Even separator tone
+    this->tone(RADIOLIB_SSTVEXT_TONE_ROBOT36_EVEN, (4500 * correctionFactor));
+    // Porch tone
+    this->tone(RADIOLIB_SSTVEXT_TONE_ROBOT36_PORCH, (1500 * correctionFactor));
+  } else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (lastLine == false)) {
+    // Odd separator tone
+    this->tone(RADIOLIB_SSTVEXT_TONE_ROBOT36_ODD, (4500 * correctionFactor));
+    // Porch tone
+    this->tone(RADIOLIB_SSTVEXT_TONE_ROBOT36_PORCH, (1500 * correctionFactor));
+  }
+}
+
+// void SSTVEXTClient::makeTask() {
+
+// }
+
 void SSTVEXTClient::sendLine(const uint32_t* imgLine) {
   // send all tones in sequence
   for(uint8_t i = 0; i < txMode.numTones; i++) {
     if((txMode.tones[i].type == toneext_t::GENERIC) && (txMode.tones[i].len > 0)) {
       // sync/porch tones
       this->tone(txMode.tones[i].freq, txMode.tones[i].len);
+    // } else if (txMode.tones[i].type == toneext_t::SCAN_RY_BY) {
     } else {
-      if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (txMode.tones[i].type == toneext_t::SCAN_RY_BY) && (lastLine == true)) {
+      if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (lastLine == true)) {
         // Even separator tone
         this->tone(1500, (4500 * correctionFactor));
         // Porch tone
         this->tone(1900, (1500 * correctionFactor));
-      } else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (txMode.tones[i].type == toneext_t::SCAN_RY_BY) && (lastLine == false)) {
+      } else if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (lastLine == false)) {
         // Odd separator tone
         this->tone(2300, (4500 * correctionFactor));
         // Porch tone
@@ -194,21 +244,15 @@ void SSTVEXTClient::sendLine(const uint32_t* imgLine) {
         }
         if ((txMode.visCode == RADIOLIB_SSTVEXT_ROBOT_36) && (txMode.tones[i].type == toneext_t::SCAN_Y)) {
           this->tone(RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)v * 3.1372549), ((88000 / txMode.width) * correctionFactor));
-        } else if (lastLine == true) {
+        } else if ((txMode.tones[i].type == toneext_t::SCAN_RY_BY) && (lastLine == true)) {
           previousValueRY[j] = currentValueRY[j];
-          // Serial.println("HERE FIRST!");
-          // Serial.println(previousValueRY[j]);
-          // Serial.println(currentValueRY[j]);
           currentValueRY[j] = (RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)vry * 3.1372549));
           averageValueRY = ((previousValueRY[j] + currentValueRY[j]) / 2);
           currentValueBY[j] = (RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)vby * 3.1372549));
 
           this->tone(averageValueRY, ((44000 / txMode.width) * correctionFactor));
-        } else if (lastLine == false) {
+        } else if ((txMode.tones[i].type == toneext_t::SCAN_RY_BY) && (lastLine == false)) {
           previousValueBY[j] = currentValueBY[j];
-          // Serial.println("HERE SECOND!");
-          // Serial.println(previousValueBY[j]);
-          // Serial.println(currentValueBY[j]);
           currentValueBY[j] = (RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)vby * 3.1372549));
           averageValueBY = ((previousValueBY[j] + currentValueBY[j]) / 2);
           currentValueRY[j] = (RADIOLIB_SSTVEXT_TONE_BRIGHTNESS_MIN + ((float)vry * 3.1372549));
